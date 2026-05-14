@@ -31,11 +31,17 @@ export default function LoginPage() {
       },
     });
 
+
     if (error) {
-      console.error(error);
-      setMessage("Klarte ikke sende innloggingslenke.");
+      console.error("LOGIN ERROR:", error);
+      setMessage(error.message);
       return;
     }
+    //if (error) {
+     // console.error(error);
+      //setMessage("Klarte ikke sende innloggingslenke.");
+      //return;
+    //}
 
     setMessage("Sjekk e-posten din for innloggingslenke. Eposten blir sendt av Supabase Auth");
   }
