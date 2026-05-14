@@ -135,7 +135,7 @@ export default function TopplistePage() {
         }
       >();
 
-      (data as CheckinRow[]).forEach((checkin) => {
+      (data as unknown as CheckinRow[]).forEach((checkin) => {
         if (!grouped.has(checkin.user_name)) {
           grouped.set(checkin.user_name, {
             uniqueLocationIds: new Set<number>(),
@@ -146,7 +146,9 @@ export default function TopplistePage() {
         const user = grouped.get(checkin.user_name)!;
 
         user.uniqueLocationIds.add(checkin.location_id);
-        user.totalPoints += checkin.locations?.points ?? 0;
+        user.totalPoints += Array.isArray(checkin.locations)
+          ? checkin.locations[0]?.points ?? 0
+          : checkin.locations?.points ?? 0;
       });
 
       const leaderboardRows: LeaderboardRow[] = Array.from(grouped.entries()).map(
