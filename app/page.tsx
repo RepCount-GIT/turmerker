@@ -58,7 +58,7 @@ export default function Home() {
     >
       <section
         style={{
-          padding: "16px",
+          padding: "12px 16px",
           background: "white",
           borderBottom: "1px solid #e5e7eb",
         }}
@@ -67,112 +67,107 @@ export default function Home() {
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: "16px",
-            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "12px",
           }}
         >
           <div>
-            <h1 style={{ margin: 0, fontSize: "28px" }}>
-              Turmerker
-            </h1>
-
-            <p style={{ marginTop: "6px", marginBottom: "14px" }}>
-              Finn digitale turmål og sjekk inn når du er fremme.
+            <h1 style={{ margin: 0, fontSize: "26px" }}>Turmerker</h1>
+            <p style={{ margin: "4px 0 0", fontSize: "14px", color: "#4b5563" }}>
+              Finn turmål og sjekk inn.
             </p>
+          </div>
 
-            <div
+          {user && (
+            <div style={{ textAlign: "right", fontSize: "14px" }}>
+              <div style={{ color: "#6b7280" }}>Logget inn</div>
+              <strong>{profileName || user.email}</strong>
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            marginTop: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <a
+            href="/toppliste"
+            style={{
+              padding: "8px 12px",
+              background: "#166534",
+              color: "white",
+              borderRadius: "8px",
+              textDecoration: "none",
+              fontWeight: "bold",
+            }}
+          >
+            Toppliste
+          </a>
+
+          {user ? (
+            <>
+              <a
+                href="/profil"
+                style={{
+                  padding: "8px 12px",
+                  background: "#f3f4f6",
+                  color: "#111827",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  fontWeight: "bold",
+                }}
+              >
+                Min profil
+              </a>
+
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.reload();
+                }}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "#991b1b",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                Logg ut
+              </button>
+            </>
+          ) : (
+            <a
+              href="/login"
               style={{
-                display: "flex",
-                gap: "8px",
-                alignItems: "center",
+                padding: "8px 12px",
+                background: "#166534",
+                color: "white",
+                borderRadius: "8px",
+                textDecoration: "none",
+                fontWeight: "bold",
               }}
             >
-              <a
-                href="/toppliste"
-                style={{
-                  padding: "10px 16px",
-                  background: "#166534",
-                  color: "white",
-                  borderRadius: "8px",
-                  textDecoration: "none",
-                  fontWeight: "bold",
-                }}
-              >
-                Se toppliste
-              </a>
+              Logg inn
+            </a>
+          )}
 
-              
-            </div>
-          </div>
-
-          <div style={{ textAlign: "right" }}>
-            {user ? (
-              <>
-                <div
-                  style={{
-                    fontSize: "14px",
-                    color: "#4b5563",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Logget inn som
-                </div>
-
-                <strong>{profileName || user.email}</strong>
-
-                <br />
-                <a href="/profil">
-                  Min profil
-                </a>
-                <br />
-                <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    window.location.reload();
-                  }}
-                  style={{
-                    marginTop: "10px",
-                    padding: "8px 12px",
-                    borderRadius: "8px",
-                    border: "none",
-                    background: "#991b1b",
-                    color: "white",
-                    cursor: "pointer",
-                    fontWeight: "bold",
-                  }}
-                >
-                  Logg ut
-                </button>
-                <br />
-
-                <a
-                href="/personvern"
-                style={{
-                  color: "blue",
-                  textDecoration: "underline",
-                }}
-              >
-                Personvern
-              </a>
-              </>
-            ) : (
-              <a
-                href="/login"
-                style={{
-                  display: "inline-block",
-                  padding: "10px 16px",
-                  background: "#166534",
-                  color: "white",
-                  borderRadius: "8px",
-                  textDecoration: "none",
-                  fontWeight: "bold",
-                }}
-              >
-                Logg inn
-              </a>
-            )}
-          </div>
+          <a
+            href="/personvern"
+            style={{
+              padding: "8px 0",
+              color: "blue",
+              textDecoration: "underline",
+            }}
+          >
+            Personvern
+          </a>
         </div>
       </section>
 
