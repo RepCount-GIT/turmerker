@@ -1,65 +1,182 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import { User } from "@supabase/supabase-js";
+import MapWrapper from "../components/MapWrapper";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const [user, setUser] = useState<User | null>(null);
+  const router = useRouter();
+  const [profileName, setProfileName] = useState("");
+
+  useEffect(() => {
+    async function loadUser() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const currentUser = session?.user ?? null;
+
+      setUser(currentUser);
+
+      if (!currentUser) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", currentUser.id)
+        .single();
+      if (profile) {
+        setProfileName(profile.full_name ?? "");
+      }
+      if (!profile) {
+        router.push("/profil");
+      }
+    }
+
+    loadUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#f3f4f6",
+      }}
+    >
+      <section
+        style={{
+          padding: "16px",
+          background: "white",
+          borderBottom: "1px solid #e5e7eb",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            gap: "16px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <h1 style={{ margin: 0, fontSize: "28px" }}>
+              Turmerker
+            </h1>
+
+            <p style={{ marginTop: "6px", marginBottom: "14px" }}>
+              Finn digitale turmål og sjekk inn når du er fremme.
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                alignItems: "center",
+              }}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <a
+                href="/toppliste"
+                style={{
+                  padding: "10px 16px",
+                  background: "#166534",
+                  color: "white",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  fontWeight: "bold",
+                }}
+              >
+                Se toppliste
+              </a>
+
+              
+            </div>
+          </div>
+
+          <div style={{ textAlign: "right" }}>
+            {user ? (
+              <>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#4b5563",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Logget inn som
+                </div>
+
+                <strong>{profileName || user.email}</strong>
+
+                <br />
+                <a href="/profil">
+                  Min profil
+                </a>
+                <br />
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    window.location.reload();
+                  }}
+                  style={{
+                    marginTop: "10px",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: "none",
+                    background: "#991b1b",
+                    color: "white",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                  }}
+                >
+                  Logg ut
+                </button>
+                <br />
+
+                <a
+                href="/personvern"
+                style={{
+                  color: "blue",
+                  textDecoration: "underline",
+                }}
+              >
+                Personvern
+              </a>
+              </>
+            ) : (
+              <a
+                href="/login"
+                style={{
+                  display: "inline-block",
+                  padding: "10px 16px",
+                  background: "#166534",
+                  color: "white",
+                  borderRadius: "8px",
+                  textDecoration: "none",
+                  fontWeight: "bold",
+                }}
+              >
+                Logg inn
+              </a>
+            )}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </section>
+
+      <MapWrapper />
+    </main>
   );
 }
