@@ -122,7 +122,7 @@ export default function TopplistePage() {
 
       const profileByEmail = new Map<string, string>(
         (profiles ?? []).map((profile: any) => [
-          profile.email,
+          profile.email?.trim().toLowerCase(),
           profile.full_name,
         ])
       );
@@ -153,7 +153,8 @@ export default function TopplistePage() {
 
       const leaderboardRows: LeaderboardRow[] = Array.from(grouped.entries()).map(
         ([userEmail, value]) => ({
-          userName: profileByEmail.get(userEmail) ?? userEmail,
+          userName:
+            profileByEmail.get(userEmail.trim().toLowerCase()) ?? userEmail,
           uniquePlaces: value.uniqueLocationIds.size,
           totalPoints: value.totalPoints,
         })
