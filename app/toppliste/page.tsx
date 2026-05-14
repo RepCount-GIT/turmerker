@@ -153,9 +153,7 @@ export default function TopplistePage() {
 
       const leaderboardRows: LeaderboardRow[] = Array.from(grouped.entries()).map(
         ([userEmail, value]) => ({
-          userName:
-            profileByEmail.get(userEmail) ??
-            userEmail.split("@")[0],
+          userName: profileByEmail.get(userEmail) ?? userEmail,
           uniquePlaces: value.uniqueLocationIds.size,
           totalPoints: value.totalPoints,
         })
