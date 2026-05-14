@@ -33,15 +33,14 @@ export default function LoginPage() {
 
 
     if (error) {
-      console.error("LOGIN ERROR:", error);
+      if (error.message.includes("rate limit")) {
+        setMessage("Du har bedt om for mange innloggingslenker. Vent noen minutter og prøv igjen.");
+        return;
+      }
+
       setMessage(error.message);
       return;
     }
-    //if (error) {
-     // console.error(error);
-      //setMessage("Klarte ikke sende innloggingslenke.");
-      //return;
-    //}
 
     setMessage("Sjekk e-posten din for innloggingslenke. Eposten blir sendt av Supabase Auth");
   }
