@@ -3,48 +3,48 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  async function handleLogin() {
+  async function handleRegister() {
     const normalizedEmail = email.trim().toLowerCase();
 
-    if (!normalizedEmail) {
-      setMessage("Skriv inn e-post.");
+    if (
+      !normalizedEmail.endsWith("@vennesla.kommune.no") &&
+      !normalizedEmail.endsWith("@nav.no")
+    ) {
+      setMessage("Kun jobb-epost er tillatt.");
       return;
     }
 
-    if (!password) {
-      setMessage("Skriv inn passord.");
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email: normalizedEmail,
       password,
     });
 
     if (error) {
-      setMessage("Feil e-post eller passord.");
+      setMessage(error.message);
       return;
     }
 
-    window.location.href = "/";
+    setMessage("Bruker opprettet! Du kan nå logge inn.");
   }
 
   return (
-    <main style={{ maxWidth: "440px", margin: "40px auto", padding: "16px" }}>
-      <a href="/" style={{ color: "blue", textDecoration: "underline" }}>
-        ← Tilbake til kartet
-      </a>
-
-      <h1>Logg inn</h1>
+    <main
+      style={{
+        maxWidth: "400px",
+        margin: "40px auto",
+        padding: "16px",
+      }}
+    >
+      <h1>Registrer bruker</h1>
 
       <input
         type="email"
-        placeholder="Jobb-epost"
+        placeholder="E-post"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         style={{
@@ -61,11 +61,6 @@ export default function LoginPage() {
         placeholder="Passord"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            handleLogin();
-          }
-        }}
         style={{
           width: "100%",
           padding: "12px",
@@ -76,7 +71,7 @@ export default function LoginPage() {
       />
 
       <button
-        onClick={handleLogin}
+        onClick={handleRegister}
         style={{
           width: "100%",
           padding: "12px",
@@ -85,17 +80,16 @@ export default function LoginPage() {
           background: "#166534",
           color: "white",
           fontWeight: "bold",
-          cursor: "pointer",
         }}
       >
-        Logg inn
+        Registrer
       </button>
 
-      {message && <p style={{ marginTop: "16px" }}>{message}</p>}
-
-      <p style={{ marginTop: "16px" }}>
-        Har du ikke bruker? <a href="/registrer">Registrer deg</a>
-      </p>
+      {message && (
+        <p style={{ marginTop: "16px" }}>
+          {message}
+        </p>
+      )}
     </main>
   );
 }
