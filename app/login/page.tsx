@@ -32,15 +32,27 @@ export default function LoginPage() {
     });
 
 
-    if (error) {
-      if (error.message.includes("rate limit")) {
-        setMessage("Du har bedt om for mange innloggingslenker. Vent noen minutter og prøv igjen.");
-        return;
-      }
+    //if (error) {
+    //  if (error.message.includes("rate limit")) {
+   //     setMessage("Du har bedt om for mange innloggingslenker. Vent noen minutter og prøv igjen.");
+    //    return;
+    //  }
 
-      setMessage(error.message);
-      return;
-    }
+    //  setMessage(error.message);
+    //  return;
+    //}
+
+    if (error) {
+  console.error("LOGIN ERROR:", {
+    message: error.message,
+    status: error.status,
+    name: error.name,
+    fullError: error,
+  });
+
+  setMessage(error.message || "Ukjent feil. Sjekk Console.");
+  return;
+}
 
     setMessage("Sjekk e-posten din for innloggingslenke. Eposten blir sendt av Supabase Auth");
   }
