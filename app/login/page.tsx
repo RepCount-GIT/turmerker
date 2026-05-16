@@ -3,99 +3,82 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
 
+const allowedDomains = [
+  "@vennesla.kommune.no",
+  "@nav.no",
+];
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
   async function handleLogin() {
     const normalizedEmail = email.trim().toLowerCase();
 
-    if (!normalizedEmail) {
-      setMessage("Skriv inn e-post.");
+    const isAllowed = allowedDomains.some((domain) =>
+      normalizedEmail.endsWith(domain)
+    );
+
+    if (!isAllowed) {
+      setMessage("Du må bruke jobb-epost fra Vennesla kommune eller NAV.");
       return;
     }
 
-    if (!password) {
-      setMessage("Skriv inn passord.");
-      return;
-    }
-
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithOtp({
       email: normalizedEmail,
-      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
     });
 
+
     if (error) {
-      setMessage("Feil e-post eller passord.");
+      if (error.message.includes("rate limit")) {
+        setMessage("Du har bedt om for mange innloggingslenker. Vent noen minutter og prøv igjen.");
+        return;
+      }
+
+      setMessage(error.message);
       return;
     }
 
-    window.location.href = "/";
+    setMessage("Sjekk e-posten din for innloggingslenke. Eposten blir sendt av Supabase Auth");
   }
 
   return (
-    <main style={{ maxWidth: "440px", margin: "40px auto", padding: "16px" }}>
-      <a href="/" style={{ color: "blue", textDecoration: "underline" }}>
-        ← Tilbake til kartet
-      </a>
-
+    <main style={{ padding: "16px", maxWidth: "420px" }}>
       <h1>Logg inn</h1>
 
-      <input
-        type="email"
-        placeholder="Jobb-epost"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "12px",
-          marginBottom: "12px",
-          borderRadius: "8px",
-          border: "1px solid #ccc",
-        }}
-      />
+      <p>Bruk jobb-eposten din for å logge inn.</p>
 
       <input
-        type="password"
-        placeholder="Passord"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            handleLogin();
-          }
-        }}
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="navn@vennesla.kommune.no"
         style={{
           width: "100%",
-          padding: "12px",
-          marginBottom: "12px",
-          borderRadius: "8px",
+          padding: "10px",
           border: "1px solid #ccc",
+          borderRadius: "8px",
+          marginBottom: "12px",
         }}
       />
 
       <button
         onClick={handleLogin}
         style={{
-          width: "100%",
-          padding: "12px",
-          borderRadius: "8px",
-          border: "none",
+          padding: "10px 16px",
           background: "#166534",
           color: "white",
+          border: "none",
+          borderRadius: "8px",
           fontWeight: "bold",
-          cursor: "pointer",
         }}
       >
-        Logg inn
+        Send innloggingslenke
       </button>
 
-      {message && <p style={{ marginTop: "16px" }}>{message}</p>}
-
-      <p style={{ marginTop: "16px" }}>
-        Har du ikke bruker? <a href="/registrer">Registrer deg</a>
-      </p>
+      {message && <p>{message}</p>}
     </main>
   );
 }
