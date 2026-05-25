@@ -3,94 +3,99 @@
 import { useState } from "react";
 import { supabase } from "../../lib/supabase";
 
-const allowedDomains = [
-  "@vennesla.kommune.no",
-  "@nav.no",
-];
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
   async function handleLogin() {
     const normalizedEmail = email.trim().toLowerCase();
 
-    const isAllowed = allowedDomains.some((domain) =>
-      normalizedEmail.endsWith(domain)
-    );
-
-    if (!isAllowed) {
-      setMessage("Du må bruke jobb-epost fra Vennesla kommune eller NAV.");
+    if (!normalizedEmail) {
+      setMessage("Skriv inn e-post.");
       return;
     }
 
-    const { error } = await supabase.auth.signInWithOtp({
+    if (!password) {
+      setMessage("Skriv inn passord.");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
+      password,
     });
 
-
-    //if (error) {
-    //  if (error.message.includes("rate limit")) {
-   //     setMessage("Du har bedt om for mange innloggingslenker. Vent noen minutter og prøv igjen.");
-    //    return;
-    //  }
-
-    //  setMessage(error.message);
-    //  return;
-    //}
-
     if (error) {
-  console.error("LOGIN ERROR:", {
-    message: error.message,
-    status: error.status,
-    name: error.name,
-    fullError: error,
-  });
+      setMessage("Feil e-post eller passord.");
+      return;
+    }
 
-  setMessage(error.message || "Ukjent feil. Sjekk Console.");
-  return;
-}
-
-    setMessage("Sjekk e-posten din for innloggingslenke. Eposten blir sendt av Supabase Auth");
+    window.location.href = "/";
   }
 
   return (
-    <main style={{ padding: "16px", maxWidth: "420px" }}>
+    <main style={{ maxWidth: "440px", margin: "40px auto", padding: "16px" }}>
+      <a href="/" style={{ color: "blue", textDecoration: "underline" }}>
+        ← Tilbake til kartet
+      </a>
+
       <h1>Logg inn</h1>
 
-      <p>Bruk jobb-eposten din for å logge inn.</p>
-
       <input
+        type="email"
+        placeholder="Jobb-epost"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="navn@vennesla.kommune.no"
         style={{
           width: "100%",
-          padding: "10px",
-          border: "1px solid #ccc",
-          borderRadius: "8px",
+          padding: "12px",
           marginBottom: "12px",
+          borderRadius: "8px",
+          border: "1px solid #ccc",
+        }}
+      />
+
+      <input
+        type="password"
+        placeholder="Passord"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            handleLogin();
+          }
+        }}
+        style={{
+          width: "100%",
+          padding: "12px",
+          marginBottom: "12px",
+          borderRadius: "8px",
+          border: "1px solid #ccc",
         }}
       />
 
       <button
         onClick={handleLogin}
         style={{
-          padding: "10px 16px",
+          width: "100%",
+          padding: "12px",
+          borderRadius: "8px",
+          border: "none",
           background: "#166534",
           color: "white",
-          border: "none",
-          borderRadius: "8px",
           fontWeight: "bold",
+          cursor: "pointer",
         }}
       >
-        Send innloggingslenke
+        Logg inn
       </button>
 
-      {message && <p>{message}</p>}
+      {message && <p style={{ marginTop: "16px" }}>{message}</p>}
+
+      <p style={{ marginTop: "16px" }}>
+        Har du ikke bruker? <a href="/registrer">Registrer deg</a>
+      </p>
     </main>
   );
 }
