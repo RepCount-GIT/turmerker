@@ -18,6 +18,10 @@ type Location = {
   difficulty: string;
 };
 
+type MyCheckin = {
+  location_id: number;
+  created_at: string;
+};
 
 
 const markerIcon = new L.Icon({
@@ -36,7 +40,7 @@ function UserLocation({
   const map = useMap();
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
+    const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         const newPosition: [number, number] = [
           pos.coords.latitude,
@@ -45,13 +49,27 @@ function UserLocation({
 
         setPosition(newPosition);
         onPositionFound(newPosition);
-        map.flyTo(newPosition, 14);
       },
       (err) => {
         console.error(err);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 10000,
       }
     );
-  }, [map, onPositionFound]);
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [onPositionFound]);
+
+  useEffect(() => {
+    if (position) {
+      map.setView(position);
+    }
+  }, [position, map]);
 
   if (!position) return null;
 
@@ -60,7 +78,7 @@ function UserLocation({
 
 export default function Map() {
   const [userPosition, setUserPosition] = useState<[number, number] | null>(null);
-  const [checkedInIds, setCheckedInIds] = useState<number[]>([]);
+  const [myCheckins, setMyCheckins] = useState<MyCheckin[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [user, setUser] = useState<User | null>(null);
  
@@ -122,7 +140,7 @@ export default function Map() {
 
       const { data, error } = await supabase
         .from("checkins")
-        .select("location_id")
+        .select("location_id, created_at")
         .eq("user_name", user.email);
 
       if (error) {
@@ -130,15 +148,49 @@ export default function Map() {
         return;
       }
 
-      const uniqueLocationIds = Array.from(
-        new Set(data.map((checkin) => checkin.location_id))
-      );
-
-      setCheckedInIds(uniqueLocationIds);
+      setMyCheckins((data ?? []) as MyCheckin[]);
     }
 
     loadMyCheckins();
   }, [user]);
+
+function isCheckedIn(locationId: number) {
+  return myCheckins.some((checkin) => checkin.location_id === locationId);
+}
+
+function isCheckedInLast24Hours(locationId: number) {
+  const since = Date.now() - 24 * 60 * 60 * 1000;
+
+  return myCheckins.some((checkin) => {
+    return (
+      checkin.location_id === locationId &&
+      new Date(checkin.created_at).getTime() >= since
+    );
+  });
+}
+
+function getMarkerIcon(locationId: number) {
+  const recent = isCheckedInLast24Hours(locationId);
+  const visited = isCheckedIn(locationId);
+
+  const color = recent ? "#16a34a" : visited ? "#2563eb" : "#dc2626";
+
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="
+        width: 22px;
+        height: 22px;
+        background: ${color};
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.45);
+      "></div>
+    `,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+  });
+}
 
   async function handleCheckIn(location: Location) {
     if (!user?.email) {
@@ -185,7 +237,13 @@ export default function Map() {
       if (error) {
         if (error.code === "23505") {
           alert("Du har allerede sjekket inn her.");
-          setCheckedInIds((prev) => [...prev, location.id]);
+          setMyCheckins((prev) => [
+  ...prev,
+  {
+    location_id: location.id,
+    created_at: new Date().toISOString(),
+  },
+]);
           return;
         }
 
@@ -194,8 +252,15 @@ export default function Map() {
         return;
       }
 
-      setCheckedInIds((prev) => [...prev, location.id]);
-      alert(`Du sjekket inn på ${location.name}!`);
+      setMyCheckins((prev) => [
+  ...prev,
+  {
+    location_id: location.id,
+    created_at: new Date().toISOString(),
+  },
+]);
+
+alert(`Du sjekket inn på ${location.name}!`);
   }
 
   return (
@@ -227,13 +292,14 @@ export default function Map() {
           const isCloseEnough =
             distance !== null && distance <= location.radiusMeters;
 
-          const isCheckedIn = checkedInIds.includes(location.id);
+          const hasVisited = isCheckedIn(location.id);
+const isRecent = isCheckedInLast24Hours(location.id);
 
           return (
             <Marker
               key={location.id}
               position={location.position}
-              icon={markerIcon}
+              icon={getMarkerIcon(location.id)}
             >
               <Popup>
                 <strong>{location.name}</strong>
@@ -262,24 +328,34 @@ export default function Map() {
                   </>
                 )}
 
-                {isCheckedIn ? (
-                  <strong>✅ Besøkt</strong>
-                ) : (
-                  <button
-                    onClick={() => handleCheckIn(location)}
-                    disabled={!isCloseEnough}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      border: "none",
-                      background: isCloseEnough ? "#166534" : "#ccc",
-                      color: "white",
-                      cursor: isCloseEnough ? "pointer" : "not-allowed",
-                    }}
-                  >
-                    Sjekk inn
-                  </button>
-                )}
+                {isRecent ? (
+  <strong>✅ Besøkt siste 24 timer</strong>
+) : (
+  <>
+    {hasVisited && (
+      <>
+        <strong>✅ Besøkt tidligere</strong>
+        <br />
+        <br />
+      </>
+    )}
+
+    <button
+      onClick={() => handleCheckIn(location)}
+      disabled={!isCloseEnough}
+      style={{
+        padding: "8px 12px",
+        borderRadius: "8px",
+        border: "none",
+        background: isCloseEnough ? "#166534" : "#ccc",
+        color: "white",
+        cursor: isCloseEnough ? "pointer" : "not-allowed",
+      }}
+    >
+      Sjekk inn
+    </button>
+  </>
+)}
 
                 {!isCloseEnough && !isCheckedIn && distance !== null && (
                   <>
@@ -303,7 +379,7 @@ export default function Map() {
         }}
       >
         <strong>Besøkte steder:</strong>{" "}
-        {checkedInIds.length} av {locations.length}
+        {new Set(myCheckins.map((c) => c.location_id)).size} av {locations.length}
       </div>
     </div>
   );
